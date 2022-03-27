@@ -110,13 +110,13 @@ AIRLogic Algorithm
 
 | Core    | QT      | Chain      | OS          | Network | Version  | Server  |
 | ------- | ------- | ---------- | ----------- | ------- | -------  | ------- | 
-| Green   | Green   | Non-HD     | Debian 10   | Liese   |  v5.5.2  | Local   |
+| Green   | Green   | Non-HD     | Debian 10   | Liese   |  v5.6.5  | Local   |
 | Green   | Green   | Non-HD     | Debian 10   | Liese   |  v5.4.9  | Stream  |
-| Green   | Green   | Non-HD     | Debian 10   | Lilith  |  v5.5.2  | Local   |
+| Green   | Green   | Non-HD     | Debian 10   | Lilith  |  v5.6.5  | Local   |
 | Green   | Green   | Non-HD     | Debian 10   | Lilith  |  v5.4.9  | Stream  |
-| Green   | Green   | Non-HD     | Debian 10   | Arin    |  v5.5.2  | Local   |
+| Green   | Green   |   HD       | Debian 10   | Arin    |  v5.6.5  | Local   |
 | Green   | Green   | Non-HD     | Debian 10   | Arin    |  v5.4.9  | Stream  |
-| Green   | Green   | Non-HD     | Debian 10   | GaZa    |  v5.5.2  | Local   |
+| Green   | Green   | Non-HD     | Debian 10   | GaZa    |  v5.6.5  | Local   |
 | Green   | Green   | Non-HD     | Debian 10   | GaZa    |  v5.4.9  | Stream  |
 | Green   | Green   | Non-HD     | Debian 10   | Testnet |  v5.5.2  | Local   |
 | Red     | Red     | Non-HD     | Debian 10   | Testnet |  v5.4.6  | Testnet |
