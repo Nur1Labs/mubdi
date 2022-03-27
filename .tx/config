@@ -1,0 +1,7 @@
+[main]
+host = https://www.transifex.com
+
+[mubdi-project-translations.qt-translation-40x]
+file_filter = src/qt/locale/mubdi_<lang>.ts
+source_file = src/qt/locale/mubdi_en.ts
+source_lang = en

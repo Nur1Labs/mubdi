@@ -1,0 +1,196 @@
+#!/bin/bash
+# Copyright (c) 2010-2021 Nur1Labs
+# Distributed under the MIT software license, see the accompanying
+# file COPYING or http://www.opensource.org/licenses/mit-license.php.
+
+TMP_FOLDER=$(mktemp -d)
+CONFIG_FILE='dinar.conf'
+CONFIGFOLDER='/root/.dinar'
+COIN_DAEMON='dinard'
+COIN_CLI='dinar-cli'
+COIN_PATH='/usr/local/bin/'
+COIN_TGZ='http://nur1labs.net/lf/dinar.zip'
+COIN_ZIP=$(echo $COIN_TGZ | awk -F'/' '{print $NF}')
+COIN_NAME='dinar'
+COIN_EXPLORER='http://chain.dinar.org'
+COIN_PORT=46100
+RPC_PORT=46101
+
+NODEIP=$(curl -s4 icanhazip.com)
+
+BLUE="\033[0;34m"
+YELLOW="\033[0;33m"
+CYAN="\033[0;36m" 
+PURPLE="\033[0;35m"
+RED='\033[0;31m'
+GREEN="\033[0;32m"
+NC='\033[0m'
+MAG='\e[1;35m'
+
+#function start
+purgeOldInstallation() {
+    echo -e "${GREEN}Searching and removing old $COIN_NAME files and configurations${NC}"
+    #kill wallet daemon
+	sudo killall $COIN_DAEMON > /dev/null 2>&1
+    #remove old ufw port allow
+    sudo ufw delete allow $COIN_PORT/tcp > /dev/null 2>&1
+    #remove old files
+    sudo rm $COIN_CLI $COIN_DAEMON > /dev/null 2>&1
+    sudo rm -rf ~/.$COIN_NAME > /dev/null 2>&1
+    #remove binaries and $COIN_NAME utilities
+    cd /usr/local/bin && sudo rm $COIN_CLI $COIN_DAEMON > /dev/null 2>&1 && cd
+    echo -e "${GREEN}* Done${NONE}";
+    echo "purge libevent old folder"
+    sudo rm -rf libevent
+}
+
+function rebuild_node() {
+  echo -e "${GREEN}Installing VPS $COIN_NAME Daemon${NC}"
+  cd $TMP_FOLDER >/dev/null 2>&1
+  cd linux
+  chmod +x $COIN_DAEMON
+  chmod +x $COIN_CLI
+  cp $COIN_DAEMON $COIN_PATH
+  cp $COIN_DAEMON /root/
+  cp $COIN_CLI $COIN_PATH
+  cp $COIN_CLI /root/
+  cd ~ >/dev/null 2>&1
+  rm -rf $TMP_FOLDER >/dev/null 2>&1
+  clear
+}
+
+function create_config() {
+  mkdir $CONFIGFOLDER >/dev/null 2>&1
+  RPCUSER=$(tr -cd '[:alnum:]' < /dev/urandom | fold -w10 | head -n1)
+  RPCPASSWORD=$(tr -cd '[:alnum:]' < /dev/urandom | fold -w22 | head -n1)
+  cat << EOF > $CONFIGFOLDER/$CONFIG_FILE
+rpcuser=$RPCUSER
+rpcpassword=$RPCPASSWORD
+txindex=1
+rpcport=$RPC_PORT
+rpcallowip=127.0.0.1
+port=$COIN_PORT
+testnet=1
+daemon=1
+listen=1
+server=1
+enableaccounts=1
+staking=0
+gen=0
+EOF
+}
+
+function get_ip() {
+  declare -a NODE_IPS
+  for ips in $(netstat -i | awk '!/Kernel|Iface|lo/ {print $1," "}')
+  do
+    NODE_IPS+=($(curl --interface $ips --connect-timeout 2 -s4 icanhazip.com))
+  done
+
+  if [ ${#NODE_IPS[@]} -gt 1 ]
+    then
+      echo -e "${GREEN}More than one IP. Please type 0 to use the first IP, 1 for the second and so on...${NC}"
+      INDEX=0
+      for ip in "${NODE_IPS[@]}"
+      do
+        echo ${INDEX} $ip
+        let INDEX=${INDEX}+1
+      done
+      read -e choose_ip
+      NODEIP=${NODE_IPS[$choose_ip]}
+  else
+    NODEIP=${NODE_IPS[0]}
+  fi
+}
+
+function compile_error() {
+if [ "$?" -gt "0" ];
+ then
+  echo -e "${RED}Failed to compile $COIN_NAME. Please investigate.${NC}"
+  exit 1
+fi
+}
+
+function checks() {
+if [[ $(lsb_release -d) != *18.04* ]]; then
+  echo -e "${RED}You are not running Ubuntu 16.04. Installation is cancelled.${NC}"
+  exit 1
+fi
+
+if [[ $EUID -ne 0 ]]; then
+   echo -e "${RED}$0 must be run as root.${NC}"
+   exit 1
+fi
+
+if [ -n "$(pidof $COIN_DAEMON)" ] || [ -e "$COIN_DAEMOM" ] ; then
+  echo -e "${RED}$COIN_NAME is already installed.${NC} Please Run again.."
+  exit 1
+fi
+}
+
+#systems
+function prepare_system() {
+echo -e "Preparing the VPS to setup. ${CYAN}$COIN_NAME${NC} ${RED}Testing Nodes${NC}"
+#this for autoinstall
+sudo apt upgrade -y >/dev/null 2>&1
+DEBIAN_FRONTEND=noninteractive sudo apt update > /dev/null 2>&1
+DEBIAN_FRONTEND=noninteractive sudo apt -o Dpkg::Options::="--force-confdef" -o Dpkg::Options::="--force-confold" -y -qq upgrade >/dev/null 2>&1
+sudo apt install -y software-properties-common >/dev/null 2>&1
+echo -e "Installing required packages, it may take some time to finish.${NC}"
+sudo apt install -y -o Dpkg::Options::="--force-confdef" -o Dpkg::Options::="--force-confold" git unzip curl ufw >/dev/null 2>&1
+sudo apt install -y -o Dpkg::Options::="--force-confdef" -o Dpkg::Options::="--force-confold" build-essential libtool bsdmainutils autotools-dev autoconf pkg-config automake python3 libssl-dev libgmp-dev libboost-all-dev >/dev/null 2>&1
+sudo apt install -y -o Dpkg::Options::="--force-confdef" -o Dpkg::Options::="--force-confold" libminiupnpc-dev libzmq3-dev libqt5gui5 libqt5core5a libqt5dbus5 libqt5svg5-dev libqt5charts5-dev qttools5-dev qttools5-dev-tools libqrencode-dev libprotobuf-dev protobuf-compiler qt5-qmake >/dev/null 2>&1
+sudo apt install -y -o Dpkg::Options::="--force-confdef" -o Dpkg::Options::="--force-confold" libsodium-dev >/dev/null 2>&1
+if [ "$?" -gt "0" ];
+  then
+    echo -e "${RED}Not all required packages were installed properly. Try to install them manually by running the following commands:${NC}\n"
+    echo "sudo apt update"
+    echo "sudo apt -y install software-properties-common"
+    echo "sudo apt update"
+    echo "sudo apt install -y git unzip curl ufw &&
+	sudo apt install -y build-essential libtool bsdmainutils autotools-dev autoconf pkg-config automake python3 libssl-dev libgmp-dev libboost-all-dev &&
+	sudo apt install -y libminiupnpc-dev libzmq3-dev libqt5gui5 libqt5core5a libqt5dbus5 libqt5svg5-dev libqt5charts5-dev qttools5-dev qttools5-dev-tools libqrencode-dev libprotobuf-dev protobuf-compiler qt5-qmake &&
+        sudo apt install -y libsodium-dev"
+ exit 1
+fi
+clear
+git clone https://github.com/libevent/libevent.git
+cd libevent
+./autogen.sh && ./configure && sudo make && make install && cd ..
+
+#db
+sudo apt install libdb-dev libdb++-dev -y
+
+#zipped simple
+cd ~/coins/cai_tokenstream/core && unzip plugin.zip
+#chmod
+cd ~/coins/cai_tokenstream/core && chmod 755 -R build-aux && chmod 755 -R depends && chmod 755 -R share && chmod 755 -R mubdi.sh
+cd ~/coins/cai_tokenstream/core && chmod 755 -R src/leveldb && chmod 755 -R src/univalue
+#main
+cd ~/coins/cai_tokenstream/core && ./mubdi.sh && ./configure --enable-cxx --disable-shared --enable-hardening --without-gui --with-incompatible-bdb --with-unsupported-ssl && sudo make && make install
+}
+
+function important_information() {
+ echo
+ echo -e "${BLUE}================================================================================================================================${NC}"
+ echo -e "${BLUE}================================================================================================================================${NC}"
+ echo -e "$COIN_NAME Test Nodes is up and running listening on port ${GREEN}$COIN_PORT${NC}."
+ echo -e "Configuration file is: ${RED}$CONFIGFOLDER/$CONFIG_FILE${NC}"
+ echo -e "VPS_IP:PORT ${GREEN}$NODEIP:$COIN_PORT${NC}"
+}
+
+#function_end
+function setup_node() {
+  get_ip
+  create_config
+  important_information
+}
+
+##### Main #####
+clear
+
+purgeOldInstallation
+checks
+prepare_system
+rebuild_node
+setup_node

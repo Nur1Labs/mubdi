@@ -1,0 +1,16 @@
+version: 2
+jobs:
+  build:
+    docker:
+      - image: debian:stretch
+    steps:
+      - run: apt update && apt -y upgrade      
+      - run: apt install -y git unzip curl build-essential libtool bsdmainutils autotools-dev autoconf pkg-config automake python3 libssl-dev libgmp-dev libboost-all-dev libdb-dev libdb++-dev libminiupnpc-dev libzmq3-dev libqt5gui5 libqt5core5a libqt5dbus5 libqt5svg5-dev qttools5-dev qttools5-dev-tools libprotobuf-dev protobuf-compiler libqrencode-dev qt5-qmake
+      - run: cd ~ && git clone https://github.com/libevent/libevent.git
+      - run: cd ~/libevent && ./autogen.sh && ./configure && make && make install
+      - run: cd ~ && mkdir coins && cd coins && git clone https://sora88:5y5t3-AtL4nSi4-b4sE@bitbucket.org/nur1labs/mubdi.git cariacore
+      - run: cd ~/coins/dhm/core && git checkout dev && unzip plugins.zip
+      - run: cd ~/coins/dhm/core && cp -R ~/coins/cariacore/plugins/* ~/coins/cariacore/core
+      - run: cd ~/coins/dhm/core && chmod 755 -R build-aux && chmod 755 -R depends && chmod 755 -R share && chmod 755 -R mubdi.sh
+      - run: cd ~/coins/dhm/core && chmod 755 -R src/leveldb && chmod 755 -R src/univalue
+      - run: cd ~/coins/dhm/core && sed -i -e 's/\r$//' mubdi.sh && ./mubdi.sh && ./configure --enable-cxx --enable-hardening --with-incompatible-bdb --with-unsupported-ssl --disable-man && make && make install

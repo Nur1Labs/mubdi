@@ -1,0 +1,15 @@
+Building AriA
+
+Used following step.
+
+	- create folder coins at linux by : mkdir coins && cd coins
+	- clone and choose type nodes
+    1. cn_install.sh = core nodes. for main cores system install.
+	2. wn_install.sh = mainly for wallet nodes.
+	3. mn_install.sh = masternodes only.
+	4. en_install.sh = for exchanger nodes.
+	5. tn_install.sh = testing nodes. for test nodes only.
+	6. rn_install.sh = rebuild nodes. easily upgraded nodes.
+	for ubuntu18 used ubu18
+
+Always verify the signatures and checksums.
